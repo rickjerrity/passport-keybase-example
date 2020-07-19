@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passport Keybase Express Example</title>
+
+  <style>
+    body {
+      margin: 0px;
+      background-color: aliceblue;
+    }
+
+    #container {
+      display: flex;
+      justify-content: center;
+      height: 100vh;
+      margin: 0px 20px;
+    }
+
+    #content {
+      max-width: 960px;
+    }
+
+    #verifyTxt {
+      margin: 10px 0px;
+    }
+
+    input {
+      margin: 10px 0px;
+    }
+
+    #checkAuth {
+      margin-top: 20px;
+    }
+
+    .centeredContent {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #authOutput {
+      margin: 20px 0px;
+    }
+
+    @media only screen and (max-width: 960px) {
+      #container {
+        display: block !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <div id="content">
+      <div class="centeredContent">
+        <h1>Passport Keybase Express Example</h1>
+      </div>
+
+      <div class="centeredContent">
+        <p>This is a demo of the <a href="https://www.npmjs.com/package/passport-keybase">Keybase Passport Strategy</a>
+          package for Express/PassportJS which utilitizes the <a href="https://www.npmjs.com/package/keybase-id">Keybase
+            Id</a> package for authentication/identification. This demo allows users to login using
+          their Keybase username and a signed Saltpack message.
+          Sign the random string generated below with your Keybase client, then enter your Keybase username, paste your
+          signed
+          message below, and Login. After logging in, you can check your authentication status using the "Check
+          Authentication" button
+        </p>
+      </div>
+
+      <div class="centeredContent">
+        <p>Message to Sign: <span id="verifyTxt"></span></p>
+      </div>
+
+      <form id="login">
+        <div class="centeredContent">
+          Keybase Username
+        </div>
+
+        <div class="centeredContent">
+          <input id="username" type="text" placeholder="Keybase Username" />
+        </div>
+
+        <div class="centeredContent">
+          <label for="signedMsg">Signed Message</label>
+        </div>
+
+        <div class="centeredContent">
+          <textarea id="signedMsg" type="text" placeholder="Signed Message" cols="100" rows="10"></textarea>
+        </div>
+
+        <div class="centeredContent">
+          <input type="submit" value="Login" />
+        </div>
+      </form>
+
+      <div id="checkAuth" class="centeredContent">
+        <button onclick="checkAuth()">Check Authentication</button>
+      </div>
+
+      <div class="centeredContent">
+        <p id="authOutput"></p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const apiUrl = 'http://localhost:3000/';
+    let bearerToken;
+    let authOutput;
+
+    function login(e) {
+      e.preventDefault();
+
+      const data = {
+        verifyTxt: document.getElementById('verifyTxt').innerText,
+        username: document.getElementById('username').value,
+        signedMessage: document.getElementById('signedMsg').value,
+      }
+
+      fetch(apiUrl + 'login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          if (data) {
+            bearerToken = data.bearerToken;
+
+            authOutput.innerText = "Login successful. Now you can check your authentication status.";
+          } else {
+            authOutput.innerText = "Failed to login. Check your username and make sure your Saltpack Signed Message content is the exact same as the \"Message to Sign\" above.";
+          }
+        })
+        .catch((err) => {
+          authOutput.innerText = "Failed to login. Check your username and Saltpack Signed Message content.";
+        });
+
+      return false;
+    }
+
+    function checkAuth() {
+      if (bearerToken) {
+        fetch(apiUrl + 'authenticated', {
+          headers: {
+            'Authorization': 'Bearer ' + bearerToken
+          }
+        })
+          .then((response) => {
+            if (response.status === 401) {
+              authOutput.innerText = "401 Status Code Returned. Unauthorized.";
+            }
+            else {
+              return response.json();
+            }
+          })
+          .then((data) => {
+            if (data) {
+              authOutput.innerText = JSON.stringify(data, null, 2);
+            }
+            else {
+              authOutput.innerText = "Unknown error hitting authenticated endpoint";
+            }
+          })
+          .catch((err) => {
+            authOutput.innerText = "Error checking authentication. Make sure you have logged in first.";
+          });
+      } else {
+        authOutput.innerText = "Make sure you have logged in first using the instructions above.";
+      }
+    }
+
+    function uuidv4() {
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+    }
+
+    function onLoad() {
+      document.getElementById('verifyTxt').innerText = uuidv4();
+
+      document.getElementById('login').addEventListener('submit', login, true);
+
+      authOutput = document.getElementById('authOutput');
+    }
+
+    window.onload = onLoad;
+  </script>
+</body>
+
+</html>
