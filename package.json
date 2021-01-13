@@ -1,6 +1,6 @@
 {
   "name": "passport-keybase-example",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An example ExpressJS website demonstrating the passport-keybase authentication strategy for PassportJS.",
   "main": "index.js",
   "scripts": {
